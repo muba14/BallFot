@@ -1,0 +1,480 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0a0b0a">
+<title>BallFot</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@500;600;700&display=swap">
+<style>
+/* Yerleşim: üstte ince başlık, ortada kaydırılan tek sütun, altta 5 sekmeli sabit çubuk; detaylar alttan açılan panelde. */
+:root{
+  color-scheme:dark;
+  --bg:#0a0b0a; --surface:#141614; --raised:#1d201d; --line:#2a2e2a;
+  --fg:#f4f6f3; --muted:#9aa19a; --dim:#6b726b;
+  --green:#2fd06b; --green-deep:#12381f; --live:#ff5a4d; --gold:#f2c14e;
+  --display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  --body:"Barlow",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --r:14px;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--fg);font:15px/1.4 var(--body);-webkit-tap-highlight-color:transparent;overscroll-behavior:none}
+[hidden]{display:none!important}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer;background:none;border:0;padding:0}
+:focus-visible{outline:2px solid var(--green);outline-offset:2px}
+img{max-width:100%}
+#app{height:100%;max-width:520px;margin:0 auto;display:flex;flex-direction:column;position:relative}
+
+header{display:flex;align-items:center;gap:10px;padding:calc(10px + env(safe-area-inset-top,0px)) 16px 10px;border-bottom:1px solid var(--line)}
+#demo{background:var(--green-deep);color:#9fd9b3;text-align:center;font:600 12px var(--display);letter-spacing:.14em;text-transform:uppercase;padding:5px}
+header .logo{width:34px;height:34px;border-radius:9px;flex:none}
+header h1{font:700 24px/1 var(--display);letter-spacing:.02em;margin:0;text-transform:uppercase}
+header h1 span{color:var(--green)}
+header .where{margin-left:auto;font:600 13px var(--display);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+
+main{flex:1;overflow-y:auto;padding:14px 16px 24px;display:flex;flex-direction:column;gap:14px;min-height:0}
+.view{display:flex;flex-direction:column;gap:14px}
+h2{font:600 13px var(--display);letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:6px 0 -4px;display:flex;align-items:center;gap:8px}
+h2 .n{color:var(--dim)}
+.row{display:flex;align-items:center;gap:10px}
+.grow{flex:1;min-width:0}
+.ell{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.muted{color:var(--muted)} .small{font-size:12.5px}
+.num{font-family:var(--display);font-variant-numeric:tabular-nums}
+
+.btn{background:var(--raised);border:1px solid var(--line);border-radius:10px;padding:9px 14px;font-weight:600;font-size:14px}
+.btn.go{background:var(--green);border-color:var(--green);color:#04130a}
+.btn:active{transform:scale(.97)}
+.chips{display:flex;gap:8px;overflow-x:auto;margin:0 -16px;padding:2px 16px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;border:1px solid var(--line);border-radius:999px;padding:7px 13px;font-weight:500;font-size:13.5px;color:var(--muted);background:var(--surface)}
+.chip[aria-pressed=true]{background:var(--fg);color:var(--bg);border-color:var(--fg);font-weight:600}
+.seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:3px}
+.seg button{padding:8px;border-radius:8px;font-weight:600;font-size:14px;color:var(--muted)}
+.seg button[aria-pressed=true]{background:var(--raised);color:var(--fg)}
+.field{display:flex;gap:8px}
+.field input,.field select,select.box{flex:1;min-width:0;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+select.box{flex:none;width:100%;font-weight:600}
+
+.list{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.list>*+*{border-top:1px solid var(--line)}
+.item{display:flex;align-items:center;gap:11px;padding:11px 12px;width:100%;text-align:left}
+button.item:active{background:var(--raised)}
+.crest{width:26px;height:26px;object-fit:contain;flex:none}
+.face{width:38px;height:38px;border-radius:50%;object-fit:cover;background:var(--raised);flex:none}
+.star{flex:none;width:34px;height:34px;display:grid;place-items:center;color:var(--dim)}
+.star[aria-pressed=true]{color:var(--gold)}
+.star svg{width:20px;height:20px}
+
+/* maç satırı */
+.match{display:grid;grid-template-columns:44px 1fr auto;gap:10px;align-items:center;padding:10px 12px;width:100%;text-align:left}
+.match .t{font:600 14px var(--display);color:var(--muted);text-align:center}
+.match .t.live{color:var(--live)}
+.match .teams{display:grid;gap:5px;min-width:0}
+.match .tm{display:flex;align-items:center;gap:8px;min-width:0}
+.match .tm img{width:18px;height:18px;object-fit:contain}
+.match .sc{display:grid;gap:5px;font:700 17px/1.1 var(--display);text-align:right;font-variant-numeric:tabular-nums}
+.pulse{width:7px;height:7px;border-radius:50%;background:var(--live);display:inline-block;animation:p 1.4s infinite}
+@keyframes p{50%{opacity:.25}}
+@media (prefers-reduced-motion:reduce){.pulse{animation:none}}
+
+/* puan tablosu */
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+th{font:600 11.5px var(--display);letter-spacing:.1em;color:var(--dim);text-transform:uppercase;padding:9px 4px;text-align:center}
+td{padding:9px 4px;text-align:center;border-top:1px solid var(--line);font-size:14px}
+td.tn,th.tn{text-align:left}
+td.tn button{display:flex;align-items:center;gap:8px;text-align:left;width:100%}
+td.tn img{width:20px;height:20px;object-fit:contain;flex:none}
+td.pos{width:30px;color:var(--muted);position:relative;font-family:var(--display);font-weight:600}
+td.pos i{position:absolute;left:0;top:8px;bottom:8px;width:3px;border-radius:2px}
+td.pts{font:700 16px var(--display)}
+.c-hide{display:table-cell}
+@media (max-width:380px){.c-hide{display:none}}
+
+/* piyasa değeri */
+.val{font:700 17px var(--display);color:var(--green);font-variant-numeric:tabular-nums;flex:none}
+.bar{height:3px;background:var(--raised);border-radius:2px;margin-top:5px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--green);border-radius:2px}
+.total{background:var(--green-deep);border:1px solid #1e5a33;border-radius:var(--r);padding:14px 16px}
+.total b{font:700 34px/1 var(--display);display:block;margin-top:2px}
+
+.state{padding:26px 16px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:var(--r)}
+.state b{display:block;color:var(--fg);margin-bottom:4px}
+.spin{width:22px;height:22px;border:2.5px solid var(--line);border-top-color:var(--green);border-radius:50%;animation:s .8s linear infinite;margin:0 auto 8px}
+@keyframes s{to{transform:rotate(360deg)}}
+
+/* alt sekmeler */
+nav{display:grid;grid-template-columns:repeat(5,1fr);background:#0e100e;border-top:1px solid var(--line);padding:6px 4px calc(6px + env(safe-area-inset-bottom,0px))}
+nav button{display:grid;justify-items:center;gap:3px;padding:6px 0;color:var(--dim);font:600 11.5px var(--display);letter-spacing:.06em;text-transform:uppercase;border-radius:10px}
+nav svg{width:23px;height:23px}
+nav button[aria-selected=true]{color:var(--green)}
+
+/* alttan açılan panel */
+#sheet{position:absolute;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:flex-end;z-index:5}
+#sheet .panel{background:var(--bg);border-top:1px solid var(--line);border-radius:20px 20px 0 0;width:100%;max-height:92%;display:flex;flex-direction:column}
+#sheet .head{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--line)}
+#sheet .head h3{font:700 22px/1.05 var(--display);margin:0;text-transform:uppercase}
+#sheet .body{overflow-y:auto;padding:14px 16px calc(20px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:14px}
+#sheet .body>*{flex:none}
+.x{width:34px;height:34px;border-radius:50%;background:var(--raised);display:grid;place-items:center;flex:none;font-size:18px}
+.kv{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.kv div{background:var(--surface);padding:11px 12px}
+.kv span{display:block;font:600 11.5px var(--display);letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+.kv b{font:600 19px var(--display)}
+.pitch{position:relative;aspect-ratio:3/4;max-width:100%;border-radius:var(--r);overflow:hidden;
+  background:repeating-linear-gradient(0deg,#14592c 0 12.5%,#17662f 12.5% 25%);border:1px solid #1e7a3a}
+.pitch::before{content:"";position:absolute;inset:4%;border:1.5px solid rgba(255,255,255,.28)}
+.pitch::after{content:"";position:absolute;left:36%;right:36%;top:42%;aspect-ratio:1;border:1.5px solid rgba(255,255,255,.28);border-radius:50%}
+.pl{position:absolute;transform:translate(-50%,-50%);display:grid;justify-items:center;gap:2px;width:22%;z-index:1}
+.pl i{width:26px;height:26px;border-radius:50%;background:#fff;color:#0a0b0a;font:700 14px/26px var(--display);text-align:center;font-style:normal}
+.pl span{font-size:10.5px;font-weight:600;text-align:center;line-height:1.1;text-shadow:0 1px 2px #000;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.news img{width:64px;height:48px;object-fit:cover;border-radius:8px;flex:none;background:var(--raised)}
+a{color:inherit;text-decoration:none}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <svg class="logo" viewBox="0 0 64 64" aria-hidden="true"><use href="#ico"/></svg>
+    <h1>Ball<span>Fot</span></h1>
+    <div class="where" id="where">Ana Sayfa</div>
+  </header>
+  <div id="demo" hidden>Önizleme · örnek veri</div>
+  <main id="main"></main>
+  <nav role="tablist" id="nav"></nav>
+  <div id="sheet" hidden><div class="panel"><div class="head"></div><div class="body"></div></div></div>
+</div>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="ico" viewBox="0 0 64 64">
+      <rect width="64" height="64" rx="14" fill="#1a7a37"/>
+      <g fill="#209143"><rect x="0" y="0" width="64" height="8"/><rect y="16" width="64" height="8"/><rect y="32" width="64" height="8"/><rect y="48" width="64" height="8"/></g>
+      <rect width="64" height="64" rx="14" fill="none" stroke="#0d4a20" stroke-width="2"/>
+      <path d="M13 24c0-3 2-5 5-5h5c2 0 3 1 4 3l2 4 14 7c6 2 9 4 9 8v1H14c-1 0-1-1-1-2z" fill="#f4f6f3"/>
+      <path d="M11 42h43c0 2.5-1.6 4-4 4H15c-2.4 0-4-1.5-4-4z" fill="#0a0b0a"/>
+      <g fill="#0a0b0a"><rect x="15" y="45" width="4" height="6" rx="1"/><rect x="25" y="45" width="4" height="6" rx="1"/><rect x="37" y="45" width="4" height="6" rx="1"/><rect x="46" y="45" width="4" height="6" rx="1"/></g>
+      <g stroke="#1a7a37" stroke-width="2" stroke-linecap="round"><path d="M28 28l-3 4M33 30.5l-3 4M38 33l-3 4"/></g>
+      <path d="M13 31h9" stroke="#0a0b0a" stroke-width="2.5" stroke-linecap="round"/>
+    </symbol>
+  </defs>
+</svg>
+
+<script>
+"use strict";
+/* ---------- ayarlar ---------- */
+const HOST="free-api-live-football-data.p.rapidapi.com";
+const DEFAULT_KEY=""; /* anahtar kodda tutulmaz; ilk açılışta sorulur, yalnızca cihazda saklanır */
+const hasKey=()=>!!window.BF_DEMO||!!store.get("key","");
+const LEAGUES=[{id:71,n:"Süper Lig"},{id:87,n:"La Liga"},{id:47,n:"Premier League"},{id:54,n:"Bundesliga"},{id:55,n:"Serie A"},{id:53,n:"Ligue 1"},{id:42,n:"Şampiyonlar Ligi"},{id:73,n:"Avrupa Ligi"}];
+const LNAME=Object.fromEntries(LEAGUES.map(l=>[l.id,l.n]));
+const QUICK_TEAMS=[{id:8637,n:"Galatasaray"},{id:8695,n:"Fenerbahçe"},{id:8633,n:"Real Madrid"},{id:8634,n:"Barcelona"},{id:8456,n:"Man City"},{id:8650,n:"Liverpool"},{id:9825,n:"Arsenal"},{id:9823,n:"Bayern"}];
+const MIN=6e4,HOUR=36e5,DAY=864e5;
+const TABS=[
+ {k:"home",t:"Ana Sayfa",i:'<path d="M4 11l8-7 8 7v8a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1z"/>'},
+ {k:"table",t:"Puan",i:'<path d="M4 20V10M10 20V4M16 20v-7M21 20H3"/>'},
+ {k:"search",t:"Arama",i:'<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/>'},
+ {k:"market",t:"Değer",i:'<path d="M3 17l5-5 4 3 8-8M15 7h5v5"/>'},
+ {k:"extra",t:"Ekstra",i:'<path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.8-5.2 2.8 1-5.8-4.3-4.1 5.9-.9z"/>'}
+];
+
+/* ---------- depolama ---------- */
+const store={
+  get(k,d){try{const v=localStorage.getItem("bf:"+k);return v==null?d:JSON.parse(v)}catch(e){return d}},
+  set(k,v){try{localStorage.setItem("bf:"+k,JSON.stringify(v))}catch(e){}},
+  clearCache(){try{Object.keys(localStorage).filter(k=>k.startsWith("bf:c:")).forEach(k=>localStorage.removeItem(k))}catch(e){}}
+};
+const S={tab:store.get("tab","home"),league:store.get("league",71),season:"cur",mode:"player",mseg:"squad",mteam:store.get("mteam",null),
+  favs:store.get("favs",[]),quota:store.get("quota",null),showAll:false};
+
+/* ---------- API (önbellekli: aylık istek hakkını korur) ---------- */
+async function api(path,ttl,force){
+  if(window.BF_DEMO)return window.BF_DEMO(path);
+  const ck="c:"+path,c=store.get(ck,null);
+  if(c&&!force&&Date.now()-c.t<ttl)return {d:c.d,t:c.t};
+  try{
+    const r=await fetch("https://"+HOST+"/"+path,{headers:{"x-rapidapi-key":store.get("key",DEFAULT_KEY),"x-rapidapi-host":HOST}});
+    const lim=r.headers.get("x-ratelimit-requests-limit"),rem=r.headers.get("x-ratelimit-requests-remaining");
+    if(lim){S.quota={lim:+lim,rem:+rem,t:Date.now()};store.set("quota",S.quota)}
+    if(r.status===429)throw new Error("Aylık istek hakkı doldu.");
+    if(r.status===401||r.status===403)throw new Error("API anahtarı kabul edilmedi. Ekstra sekmesinden kontrol et.");
+    if(!r.ok)throw new Error("Sunucu "+r.status+" döndürdü.");
+    const j=await r.json(),d=j.response||{};
+    store.set(ck,{t:Date.now(),d});
+    return {d,t:Date.now()};
+  }catch(e){
+    if(c)return {d:c.d,t:c.t,stale:true};
+    throw (e instanceof TypeError?new Error("Bağlantı kurulamadı. İnterneti kontrol edip tekrar dene."):e);
+  }
+}
+
+/* ---------- yardımcılar ---------- */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const crest=id=>`<img class="crest" loading="lazy" alt="" src="https://images.fotmob.com/image_resources/logo/teamlogo/${+id}_small.png" onerror="this.style.visibility='hidden'">`;
+const face=id=>`<img class="face" loading="lazy" alt="" src="https://images.fotmob.com/image_resources/playerimages/${+id}.png" onerror="this.style.visibility='hidden'">`;
+const money=n=>!n?"—":n>=1e9?(n/1e9).toFixed(2)+" Mr €":n>=1e6?(n/1e6).toFixed(1)+" M €":n>=1e3?Math.round(n/1e3)+" B €":n+" €";
+const ago=t=>{const m=Math.round((Date.now()-t)/MIN);return m<1?"az önce":m<60?m+" dk önce":m<1440?Math.round(m/60)+" sa önce":Math.round(m/1440)+" gün önce"};
+const loading=t=>`<div class="state"><div class="spin"></div>${esc(t||"Yükleniyor")}</div>`;
+const fail=(e,retry)=>`<div class="state"><b>Yüklenemedi</b>${esc(e.message)}${retry?`<div style="margin-top:12px"><button class="btn" data-act="${retry}">Tekrar dene</button></div>`:""}</div>`;
+const STAR='<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.8-5.2 2.8 1-5.8-4.3-4.1 5.9-.9z"/></svg>';
+const isFav=(type,id)=>S.favs.some(f=>f.type===type&&f.id==id);
+const starBtn=(type,id,name,sub)=>`<button class="star" aria-label="Favori" aria-pressed="${isFav(type,id)}" data-act="fav" data-type="${type}" data-id="${esc(id)}" data-name="${esc(name)}" data-sub="${esc(sub||"")}">${STAR}</button>`;
+function toggleFav(d){
+  const i=S.favs.findIndex(f=>f.type===d.type&&f.id==d.id);
+  if(i>=0)S.favs.splice(i,1);else S.favs.unshift({type:d.type,id:d.id,name:d.name,sub:d.sub});
+  store.set("favs",S.favs);
+  document.querySelectorAll(`.star[data-type="${d.type}"][data-id="${CSS.escape(d.id)}"]`).forEach(b=>b.setAttribute("aria-pressed",i<0));
+  if(S.tab==="extra")render();
+}
+const fresh=(r,act)=>`<div class="row small muted"><span class="grow">${r.stale?"Çevrimdışı kayıt · ":""}Güncelleme: ${ago(r.t)}</span><button class="btn" data-act="${act}">Yenile</button></div>`;
+
+/* ---------- sekme çubuğu ---------- */
+$("#nav").innerHTML=TABS.map(t=>`<button role="tab" data-tab="${t.k}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${t.i}</svg>${t.t}</button>`).join("");
+function go(tab){S.tab=tab;store.set("tab",tab);render()}
+let token=0;
+function render(){
+  const t=TABS.find(x=>x.k===S.tab)||TABS[0];
+  document.querySelectorAll("#nav button").forEach(b=>b.setAttribute("aria-selected",b.dataset.tab===t.k));
+  $("#where").textContent={home:"Ana Sayfa",table:"Puan Durumu",search:"Arama",market:"Piyasa Değeri",extra:"Ekstra"}[t.k];
+  $("#main").scrollTop=0; token++;
+  if(!hasKey()){setup();return}
+  VIEWS[t.k]();
+}
+const mainSet=h=>{$("#main").innerHTML=`<div class="view">${h}</div>`};
+const slot=(id,h)=>{const e=document.getElementById(id);if(e)e.innerHTML=h};
+
+function setup(){
+  mainSet(`<div class="state" style="border-style:solid;text-align:left"><b style="font:700 22px var(--display);text-transform:uppercase">API anahtarını gir</b>
+   BallFot verileri senin RapidAPI anahtarınla çeker. Anahtar yalnızca bu cihazda saklanır, uygulamanın kodunda yer almaz.
+   <form class="field" id="kform" style="margin-top:14px"><input id="key" type="password" autocomplete="off" aria-label="RapidAPI anahtarı" placeholder="X-RapidAPI-Key"><button class="btn go">Kaydet</button></form>
+   <div id="kerr" class="small" style="color:var(--live);margin-top:8px"></div>
+   <div class="small" style="margin-top:10px">Anahtarı RapidAPI'de "Free API Live Football Data" sayfasındaki kod örneğinde, <b style="display:inline">x-rapidapi-key</b> satırında bulursun.</div></div>`);
+}
+/* ---------- 1) ANA SAYFA ---------- */
+function matchRow(m){
+  const st=m.status||{},live=st.ongoing,done=st.finished,started=st.started;
+  const time=st.cancelled?"İpt.":live?esc((st.liveTime&&st.liveTime.short||"Canlı").replace(/[‎‏]/g,"")):done?"MS":new Date(st.utcTime||m.timeTS).toLocaleTimeString("tr-TR",{hour:"2-digit",minute:"2-digit"});
+  const sc=x=>started?(x.score??0):"";
+  return `<button class="match" data-act="match" data-id="${m.id}" data-h="${esc(m.home.name)}" data-a="${esc(m.away.name)}">
+    <div class="t ${live?"live":""}">${live?'<span class="pulse"></span><br>':""}${time}</div>
+    <div class="teams"><div class="tm">${crest(m.home.id)}<span class="ell">${esc(m.home.name)}</span></div><div class="tm">${crest(m.away.id)}<span class="ell">${esc(m.away.name)}</span></div></div>
+    <div class="sc"><span>${sc(m.home)}</span><span>${sc(m.away)}</span></div></button>`;
+}
+async function viewHome(force){
+  const my=token,d=new Date(),ymd=""+d.getFullYear()+String(d.getMonth()+1).padStart(2,"0")+String(d.getDate()).padStart(2,"0");
+  mainSet(loading("Bugünün maçları yükleniyor"));
+  let r;try{r=await api("football-get-matches-by-date?date="+ymd,10*MIN,force)}catch(e){if(my===token)mainSet(fail(e,"refresh"));return}
+  if(my!==token)return;
+  const all=(r.d.matches||[]).slice().sort((a,b)=>(a.timeTS||0)-(b.timeTS||0));
+  const live=all.filter(m=>m.status&&m.status.ongoing);
+  const favT=new Set(S.favs.filter(f=>f.type==="team").map(f=>+f.id));
+  const mine=all.filter(m=>favT.has(m.home.id)||favT.has(m.away.id));
+  let h=fresh(r,"refresh");
+  h+=`<h2><span class="pulse"></span>Canlı <span class="n">${live.length}</span></h2>`;
+  h+=live.length?`<div class="list">${live.map(matchRow).join("")}</div>`:`<div class="state">Şu an oynanan maç yok.</div>`;
+  if(mine.length)h+=`<h2>Favori takımların</h2><div class="list">${mine.map(matchRow).join("")}</div>`;
+  const groups={};all.filter(m=>!(m.status&&m.status.ongoing)).forEach(m=>{(groups[m.leagueId]=groups[m.leagueId]||[]).push(m)});
+  LEAGUES.forEach(l=>{if(groups[l.id])h+=`<h2>${esc(l.n)}</h2><div class="list">${groups[l.id].map(matchRow).join("")}</div>`});
+  const rest=all.filter(m=>!LNAME[m.leagueId]&&!(m.status&&m.status.ongoing));
+  if(rest.length){
+    h+=`<h2>Diğer maçlar <span class="n">${rest.length}</span></h2>`;
+    h+=S.showAll?`<div class="list">${rest.map(matchRow).join("")}</div>`:`<button class="btn" data-act="showall">Bugünkü diğer ${rest.length} maçı göster</button>`;
+  }
+  if(!all.length)h+=`<div class="state">Bugün için maç bulunamadı.</div>`;
+  mainSet(h);
+}
+
+/* ---------- 2) PUAN DURUMU ---------- */
+function seasons(){const y=new Date().getFullYear()-(new Date().getMonth()<6?1:0);return [0,1,2,3,4].map(i=>(y-i)+"/"+(y-i+1))}
+async function viewTable(force){
+  const my=token,ss=seasons();
+  mainSet(`<div class="chips">${LEAGUES.map(l=>`<button class="chip" aria-pressed="${l.id===S.league}" data-act="league" data-id="${l.id}">${esc(l.n)}</button>`).join("")}</div>
+    <select class="box" id="season" aria-label="Sezon">${ss.map((s,i)=>`<option value="${i?s:"cur"}" ${(i?s:"cur")===S.season?"selected":""}>Sezon ${s}</option>`).join("")}</select>
+    <div id="tbl">${loading("Puan durumu yükleniyor")}</div><div id="scorers"></div>`);
+  if(S.season!=="cur"){slot("tbl",`<div class="state"><b>${esc(S.season)} sezonu alınamıyor</b>Bağlı API şu an yalnızca güncel sezonun puan durumunu veriyor. Geçmiş sezonlar için ayrı bir veri kaynağı eklemek gerekiyor.</div>`);return}
+  let r;try{r=await api("football-get-standing-all?leagueid="+S.league,3*HOUR,force)}catch(e){if(my===token)slot("tbl",fail(e,"refresh"));return}
+  if(my!==token)return;
+  const rows=r.d.standing||[];
+  if(!rows.length){slot("tbl",`<div class="state">Bu lig için puan tablosu yok.</div>`);return}
+  slot("tbl",`<div class="list"><table><thead><tr><th></th><th class="tn">Takım</th><th>O</th><th class="c-hide">G</th><th class="c-hide">B</th><th class="c-hide">M</th><th>AV</th><th>P</th></tr></thead><tbody>${rows.map(t=>`<tr>
+    <td class="pos">${t.qualColor?`<i style="background:${esc(t.qualColor)}"></i>`:""}${t.idx}</td>
+    <td class="tn"><button data-act="team" data-id="${t.id}" data-name="${esc(t.name)}">${crest(t.id)}<span class="ell">${esc(t.shortName||t.name)}</span></button></td>
+    <td>${t.played}</td><td class="c-hide">${t.wins}</td><td class="c-hide">${t.draws}</td><td class="c-hide">${t.losses}</td><td>${t.goalConDiff>0?"+":""}${t.goalConDiff}</td><td class="pts">${t.pts}</td></tr>`).join("")}</tbody></table></div>
+    <div style="margin-top:14px">${fresh(r,"refresh")}</div>`);
+  slot("scorers",`<button class="btn" data-act="scorers" style="width:100%">Gol krallığını göster</button>`);
+}
+async function loadScorers(){
+  slot("scorers",loading("Gol krallığı yükleniyor"));
+  try{const r=await api("football-get-top-players-by-goals?leagueid="+S.league,6*HOUR);
+    const p=r.d.players||[];
+    slot("scorers",`<h2 style="margin-bottom:10px">Gol krallığı</h2>`+(p.length?`<div class="list">${p.map((x,i)=>`<div class="item"><span class="num muted" style="width:18px">${i+1}</span>${face(x.id)}<button class="grow" style="text-align:left" data-act="player" data-id="${x.id}" data-name="${esc(x.name)}" data-sub="${esc(x.teamName)}"><div class="ell"><b>${esc(x.name)}</b></div><div class="small muted ell">${esc(x.teamName)}</div></button><span class="val" style="color:var(--fg)">${x.goals}</span></div>`).join("")}</div>`:`<div class="state">Veri yok.</div>`));
+  }catch(e){slot("scorers",fail(e))}
+}
+
+/* ---------- 3) ARAMA ---------- */
+function viewSearch(){
+  mainSet(`<div class="seg"><button aria-pressed="${S.mode==="player"}" data-act="mode" data-v="player">Oyuncu</button><button aria-pressed="${S.mode==="team"}" data-act="mode" data-v="team">Takım</button></div>
+    <form class="field" id="sform"><input id="q" type="search" autocomplete="off" placeholder="${S.mode==="player"?"Oyuncu adı, örn. Arda Güler":"Takım adı, örn. Galatasaray"}" value="${esc(S.q||"")}"><button class="btn go">Ara</button></form>
+    <div id="res">${S.q?"":`<div class="state"><b>${S.mode==="player"?"Oyuncu ara":"Takım ara"}</b>${S.mode==="player"?"Oyuncuya dokununca boy, yaş, ayak, sözleşme ve piyasa değeri açılır.":"Takıma dokununca tüm kadro mevkilere göre açılır."}</div>`}</div>`);
+  if(S.q)doSearch();
+}
+function resultRow(x){
+  return x.type==="team"
+   ?`<div class="item">${crest(x.id)}<button class="grow" style="text-align:left" data-act="team" data-id="${esc(x.id)}" data-name="${esc(x.name)}"><div class="ell"><b>${esc(x.name)}</b></div><div class="small muted ell">${esc(x.leagueName||"Takım")}</div></button>${starBtn("team",x.id,x.name,x.leagueName)}</div>`
+   :`<div class="item">${face(x.id)}<button class="grow" style="text-align:left" data-act="player" data-id="${esc(x.id)}" data-name="${esc(x.name)}" data-sub="${esc(x.teamName||"")}"><div class="ell"><b>${esc(x.name)}</b></div><div class="small muted ell">${esc(x.teamName||(x.isCoach?"Teknik direktör":"Oyuncu"))}</div></button>${starBtn("player",x.id,x.name,x.teamName)}</div>`;
+}
+async function doSearch(){
+  const my=token,q=(S.q||"").trim();if(q.length<2){slot("res",`<div class="state">En az 2 harf yaz.</div>`);return}
+  slot("res",loading("Aranıyor"));
+  try{
+    const r=await api((S.mode==="player"?"football-players-search":"football-teams-search")+"?search="+encodeURIComponent(q),7*DAY);
+    if(my!==token)return;
+    const list=(r.d.suggestions||[]).filter(x=>x.type===S.mode).slice(0,30);
+    slot("res",list.length?`<div class="list">${list.map(resultRow).join("")}</div>`:`<div class="state"><b>Sonuç yok</b>"${esc(q)}" için ${S.mode==="player"?"oyuncu":"takım"} bulunamadı.</div>`);
+  }catch(e){if(my===token)slot("res",fail(e))}
+}
+
+/* ---------- 4) PİYASA DEĞERİ ---------- */
+const GROUP={coach:"Teknik direktör",keepers:"Kaleciler",defenders:"Defans",midfielders:"Orta saha",attackers:"Forvet"};
+function viewMarket(force){
+  const favTeams=S.favs.filter(f=>f.type==="team").map(f=>({id:+f.id,n:f.name}));
+  const chips=[...favTeams,...QUICK_TEAMS.filter(q=>!favTeams.some(f=>f.id===q.id))];
+  if(!S.mteam)S.mteam=chips[0];
+  mainSet(`<div class="seg"><button aria-pressed="${S.mseg==="squad"}" data-act="mseg" data-v="squad">Kadro değeri</button><button aria-pressed="${S.mseg==="transfers"}" data-act="mseg" data-v="transfers">Son transferler</button></div>
+    ${S.mseg==="squad"?`<div class="chips">${chips.map(c=>`<button class="chip" aria-pressed="${c.id===S.mteam.id}" data-act="mteam" data-id="${c.id}" data-name="${esc(c.n)}">${esc(c.n)}</button>`).join("")}</div>
+    <p class="small muted" style="margin:0">Başka bir takım için Arama sekmesinden takımı favorile; burada en başta çıkar.</p>`:""}
+    <div id="mk">${loading()}</div>`);
+  S.mseg==="squad"?marketSquad(force):marketTransfers(force);
+}
+async function marketSquad(force){
+  const my=token,tm=S.mteam;
+  let r;try{r=await api("football-get-list-player?teamid="+tm.id,DAY,force)}catch(e){if(my===token)slot("mk",fail(e,"refresh"));return}
+  if(my!==token)return;
+  const pl=((r.d.list||{}).squad||[]).filter(g=>g.title!=="coach").flatMap(g=>g.members||[]).filter(p=>p.transferValue).sort((a,b)=>b.transferValue-a.transferValue);
+  if(!pl.length){slot("mk",`<div class="state">Bu takım için piyasa değeri verisi yok.</div>`);return}
+  const total=pl.reduce((s,p)=>s+p.transferValue,0),max=pl[0].transferValue;
+  slot("mk",`<div class="total"><div class="row">${crest(tm.id)}<span class="grow ell"><b style="font:600 15px var(--body);display:inline;margin:0">${esc(tm.n)}</b> toplam kadro değeri</span></div><b>${money(total)}</b><span class="small" style="color:#9fd9b3">${pl.length} oyuncu · ortalama ${money(total/pl.length)}</span></div>
+   <div class="list" style="margin-top:14px">${pl.map((p,i)=>`<button class="item" data-act="player" data-id="${p.id}" data-name="${esc(p.name)}" data-sub="${esc(tm.n)}"><span class="num muted" style="width:20px">${i+1}</span>${face(p.id)}<span class="grow"><span class="row"><b class="grow ell">${esc(p.name)}</b><span class="val">${money(p.transferValue)}</span></span><span class="small muted">${esc(p.positionIdsDesc||(p.role&&p.role.fallback)||"")}${p.age?" · "+p.age+" yaş":""}</span><span class="bar"><i style="width:${Math.max(2,p.transferValue/max*100)}%"></i></span></span></button>`).join("")}</div>
+   <div style="margin-top:14px">${fresh(r,"refresh")}</div>`);
+}
+async function marketTransfers(force){
+  const my=token;let r;try{r=await api("football-get-all-transfers?page=1",12*HOUR,force)}catch(e){if(my===token)slot("mk",fail(e,"refresh"));return}
+  if(my!==token)return;
+  const t=(r.d.transfers||[]).slice().sort((a,b)=>(b.marketValue||0)-(a.marketValue||0));
+  slot("mk",(t.length?`<div class="list">${t.map(x=>`<button class="item" data-act="player" data-id="${x.playerId}" data-name="${esc(x.name)}" data-sub="${esc(x.toClub)}">${face(x.playerId)}<span class="grow"><span class="row"><b class="grow ell">${esc(x.name)}</b><span class="val">${money(x.marketValue)}</span></span><span class="small muted ell" style="display:block">${esc(x.fromClub)} → ${esc(x.toClub)}</span><span class="small muted">${x.onLoan?"Kiralık":x.fee&&x.fee.feeText==="free transfer"?"Bedelsiz":esc(x.fee&&x.fee.feeText||"")}${x.transferDate?" · "+new Date(x.transferDate).toLocaleDateString("tr-TR",{day:"numeric",month:"short"}):""}</span></span></button>`).join("")}</div>`:`<div class="state">Transfer verisi yok.</div>`)+`<div style="margin-top:14px">${fresh(r,"refresh")}</div>`);
+}
+
+/* ---------- 5) EKSTRA ---------- */
+function viewExtra(){
+  const q=S.quota,ft=S.favs.filter(f=>f.type==="team"),fp=S.favs.filter(f=>f.type==="player");
+  const favRow=f=>`<div class="item">${f.type==="team"?crest(f.id):face(f.id)}<button class="grow" style="text-align:left" data-act="${f.type}" data-id="${esc(f.id)}" data-name="${esc(f.name)}" data-sub="${esc(f.sub||"")}"><div class="ell"><b>${esc(f.name)}</b></div><div class="small muted ell">${esc(f.sub||(f.type==="team"?"Takım":"Oyuncu"))}</div></button>${starBtn(f.type,f.id,f.name,f.sub)}</div>`;
+  mainSet(`<h2>Favoriler <span class="n">${S.favs.length}</span></h2>
+   ${S.favs.length?`${ft.length?`<div class="list">${ft.map(favRow).join("")}</div>`:""}${fp.length?`<div class="list">${fp.map(favRow).join("")}</div>`:""}`:`<div class="state"><b>Henüz favorin yok</b>Arama sekmesinde bir takımın ya da oyuncunun yanındaki yıldıza dokun; burada en üstte görünür.</div>`}
+   <h2>Haberler</h2><div id="news"><button class="btn" data-act="news" style="width:100%">Gündemdeki haberleri yükle</button></div>
+   <h2>API kullanımı</h2>
+   <div class="list"><div class="item"><span class="grow">Bu ay kalan istek</span><b class="num" style="font-size:19px">${q?q.rem+" / "+q.lim:"—"}</b></div>
+   <div class="item small muted">Veriler telefonda saklanır ve aynı ekran tekrar açıldığında yeni istek harcanmaz. "Yenile" her dokunuşta 1 istek kullanır.</div>
+   <div class="item"><span class="grow">Saklanan verileri sil</span><button class="btn" data-act="clear">Temizle</button></div></div>
+   <h2>API anahtarı</h2>
+   <form class="field" id="kform"><input id="key" type="password" autocomplete="off" aria-label="RapidAPI anahtarı" value="${esc(store.get("key",DEFAULT_KEY))}"><button class="btn">Kaydet</button></form>
+   <p class="small muted" style="margin:0;text-align:center">BallFot · veriler free-api-live-football-data üzerinden</p>`);
+}
+async function loadNews(){
+  slot("news",loading("Haberler yükleniyor"));
+  try{const r=await api("football-get-trendingnews",6*HOUR),n=r.d.news||[];
+    slot("news",n.length?`<div class="list news">${n.map(x=>`<a class="item" target="_blank" rel="noopener" href="${esc("https://www.fotmob.com"+((x.page&&x.page.url)||""))}"><img alt="" loading="lazy" src="${esc(x.imageUrl)}" onerror="this.style.visibility='hidden'"><span class="grow"><b style="font-weight:600">${esc(x.title)}</b><span class="small muted" style="display:block">${esc(x.sourceStr||"")} · ${ago(new Date(x.gmtTime).getTime())}</span></span></a>`).join("")}</div>`:`<div class="state">Haber yok.</div>`);
+  }catch(e){slot("news",fail(e))}
+}
+
+/* ---------- paneller ---------- */
+function openSheet(head,body){$("#sheet .head").innerHTML=head+`<button class="x" data-act="close" aria-label="Kapat">✕</button>`;$("#sheet .body").innerHTML=body;$("#sheet").hidden=false;$("#sheet .body").scrollTop=0}
+const sheetBody=h=>{$("#sheet .body").innerHTML=h};
+const DT={Height:"Boy",Shirt:"Forma no",Age:"Yaş","Preferred foot":"Ayak",Country:"Ülke","Market value":"Piyasa değeri","Contract end":"Sözleşme bitişi"};
+const FOOT={Left:"Sol",Right:"Sağ",Both:"İki ayak"};
+async function openPlayer(d){
+  openSheet(`${face(d.id)}<div class="grow"><h3 class="ell">${esc(d.name)}</h3><div class="small muted ell">${esc(d.sub||"")}</div></div>${starBtn("player",d.id,d.name,d.sub)}`,loading("Oyuncu bilgisi yükleniyor"));
+  try{const r=await api("football-get-player-detail?playerid="+encodeURIComponent(d.id),3*DAY),det=r.d.detail||[];
+    if(!det.length){sheetBody(`<div class="state">Bu oyuncu için ayrıntı yok.</div>`);return}
+    sheetBody(`<div class="kv">${det.map(x=>{const v=x.value||{};let f=v.fallback;
+      if(x.title==="Market value")f=money(v.numberValue);
+      else if(f&&typeof f==="object")f=new Date(f.utcTime||v.dateValue).toLocaleDateString("tr-TR",{day:"numeric",month:"long",year:"numeric"});
+      else if(x.title==="Preferred foot")f=FOOT[f]||f;
+      return `<div><span>${esc(DT[x.title]||x.title)}</span><b style="${x.title==="Market value"?"color:var(--green)":""}">${esc(f)}</b></div>`}).join("")}</div>`);
+  }catch(e){sheetBody(fail(e))}
+}
+async function openTeam(d){
+  openSheet(`${crest(d.id)}<div class="grow"><h3 class="ell">${esc(d.name)}</h3><div class="small muted">Kadro</div></div>${starBtn("team",d.id,d.name,d.sub)}`,loading("Kadro yükleniyor"));
+  try{const r=await api("football-get-list-player?teamid="+encodeURIComponent(d.id),DAY),sq=(r.d.list||{}).squad||[];
+    if(!sq.length){sheetBody(`<div class="state">Kadro bulunamadı.</div>`);return}
+    sheetBody(sq.map(g=>`<h2>${esc(GROUP[g.title]||g.title)} <span class="n">${(g.members||[]).length}</span></h2><div class="list">${(g.members||[]).map(p=>`<div class="item"><span class="num muted" style="width:22px;text-align:center;font-weight:600">${p.shirtNumber??""}</span>${face(p.id)}<button class="grow" style="text-align:left" data-act="player" data-id="${p.id}" data-name="${esc(p.name)}" data-sub="${esc(d.name)}"><div class="ell"><b>${esc(p.name)}</b></div><div class="small muted ell">${esc(p.cname||"")}${p.age?" · "+p.age+" yaş":""}${p.goals?" · "+p.goals+" gol":""}</div></button>${p.transferValue?`<span class="val" style="font-size:15px">${money(p.transferValue)}</span>`:""}${starBtn("player",p.id,p.name,d.name)}</div>`).join("")}</div>`).join(""));
+  }catch(e){sheetBody(fail(e))}
+}
+let LU={};
+async function openMatch(d){
+  LU={id:d.id,h:d.h,a:d.a,side:"home",data:{}};
+  openSheet(`<div class="grow"><h3 class="ell">${esc(d.h)} – ${esc(d.a)}</h3><div class="small muted">Maç kadroları</div></div>`,"");
+  drawLineup();
+}
+async function drawLineup(){
+  const seg=`<div class="seg"><button aria-pressed="${LU.side==="home"}" data-act="side" data-v="home">${esc(LU.h)}</button><button aria-pressed="${LU.side==="away"}" data-act="side" data-v="away">${esc(LU.a)}</button></div>`;
+  sheetBody(seg+loading("Kadro yükleniyor"));
+  const side=LU.side;
+  try{
+    if(!LU.data[side])LU.data[side]=(await api(`football-get-${side}team-lineup?eventid=${LU.id}`,30*MIN)).d.lineup;
+    if(LU.side!==side)return;
+    const L=LU.data[side];
+    if(!L||!(L.starters||[]).length){sheetBody(seg+`<div class="state"><b>Kadro henüz açıklanmadı</b>İlk 11'ler genellikle maçtan yaklaşık bir saat önce gelir.</div>`);return}
+    const row=p=>`<div class="item"><span class="num muted" style="width:22px;text-align:center;font-weight:600">${esc(p.shirtNumber??"")}</span><button class="grow" style="text-align:left" data-act="player" data-id="${p.id}" data-name="${esc(p.name)}" data-sub="${esc(p.primaryTeamName||L.name)}"><div class="ell"><b>${esc(p.name)}</b></div>${p.unavailability?`<div class="small muted">${p.unavailability.type==="suspension"?"Cezalı":"Sakat"}</div>`:""}</button>${p.performance&&p.performance.rating?`<span class="num" style="font-weight:700">${p.performance.rating}</span>`:""}${p.marketValue?`<span class="val" style="font-size:14px;width:68px;text-align:right">${money(p.marketValue)}</span>`:""}</div>`;
+    sheetBody(seg+`<div class="kv"><div><span>Diziliş</span><b>${esc(L.formation||"—")}</b></div><div><span>İlk 11 değeri</span><b style="color:var(--green)">${money(L.totalStarterMarketValue)}</b></div></div>
+      <div class="pitch">${L.starters.map(p=>{const v=p.verticalLayout||{x:.5,y:.5};return `<div class="pl" style="left:${v.x*100}%;top:${92-v.y*100}%"><i>${esc(p.shirtNumber??"")}</i><span>${esc(p.lastName||p.name)}</span></div>`}).join("")}</div>
+      <h2>İlk 11</h2><div class="list">${L.starters.map(row).join("")}</div>
+      ${(L.subs||[]).length?`<h2>Yedekler</h2><div class="list">${L.subs.map(row).join("")}</div>`:""}
+      ${L.coach?`<h2>Teknik direktör</h2><div class="list"><div class="item"><b>${esc(L.coach.name)}</b></div></div>`:""}
+      ${(L.unavailable||[]).length?`<h2>Forma giyemeyecekler</h2><div class="list">${L.unavailable.map(row).join("")}</div>`:""}`);
+  }catch(e){sheetBody(seg+fail(e))}
+}
+
+/* ---------- olaylar ---------- */
+if(window.BF_DEMO)document.getElementById("demo").hidden=false;
+const VIEWS={home:viewHome,table:viewTable,search:viewSearch,market:viewMarket,extra:viewExtra};
+document.addEventListener("click",ev=>{
+  const tb=ev.target.closest("[data-tab]");if(tb){go(tb.dataset.tab);return}
+  if(ev.target.id==="sheet"){$("#sheet").hidden=true;return}
+  const b=ev.target.closest("[data-act]");if(!b)return;
+  const d=b.dataset;
+  switch(d.act){
+    case "refresh":VIEWS[S.tab](true);break;
+    case "showall":S.showAll=true;viewHome();break;
+    case "league":S.league=+d.id;store.set("league",S.league);render();break;
+    case "scorers":loadScorers();break;
+    case "mode":S.mode=d.v;S.q="";render();break;
+    case "mseg":S.mseg=d.v;render();break;
+    case "mteam":S.mteam={id:+d.id,n:d.name};store.set("mteam",S.mteam);render();break;
+    case "fav":toggleFav(d);break;
+    case "team":openTeam(d);break;
+    case "player":openPlayer(d);break;
+    case "match":openMatch(d);break;
+    case "side":LU.side=d.v;drawLineup();break;
+    case "news":loadNews();break;
+    case "clear":store.clearCache();b.textContent="Temizlendi";break;
+    case "close":$("#sheet").hidden=true;break;
+  }
+});
+document.addEventListener("submit",ev=>{
+  ev.preventDefault();
+  if(ev.target.id==="sform"){S.q=$("#q").value;$("#q").blur();doSearch()}
+  if(ev.target.id==="kform"){const k=$("#key").value.trim();const first=!hasKey();
+    if(k.length<20){const e=document.getElementById("kerr");if(e)e.textContent="Anahtar eksik görünüyor; tamamını yapıştır.";return}
+    store.set("key",k);store.clearCache();
+    if(first)render();else ev.target.querySelector("button").textContent="Kaydedildi"}
+});
+document.addEventListener("change",ev=>{if(ev.target.id==="season"){S.season=ev.target.value;render()}});
+/* Android geri tuşu: açık panel varsa onu kapatır */
+window.bfBack=()=>{const sh=$("#sheet");if(!sh.hidden){sh.hidden=true;return true}if(S.tab!=="home"&&hasKey()){go("home");return true}return false};
+render();
+</script>
+</body>
+</html>
